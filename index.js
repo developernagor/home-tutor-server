@@ -61,7 +61,18 @@ app.get('/questions', async(req,res) => {
     try{
         const questions = await questionCollection.find().toArray();
         res.send(questions)
-        
+
+    }catch(error){
+        res.send(error.message)
+    }
+})
+
+// Get all tutors
+app.get('/tutors', async(req,res) => {
+    try{
+        const tutors = await tutorCollection.find().toArray();
+        res.send(tutors)
+
     }catch(error){
         res.send(error.message)
     }
