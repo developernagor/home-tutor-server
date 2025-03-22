@@ -49,12 +49,23 @@ async function run() {
     const messageCollection = db.collection("messages");
     const solutionCollection = db.collection("solutions");
 
-
+// Post single Question
     app.post('/question', async(req,res) => {
         const newQuestion = req.body;
         const result = await questionCollection.insertOne(newQuestion);
         res.send(result)
     })
+
+// Get all question
+app.get('/questions', async(req,res) => {
+    try{
+        const questions = await questionCollection.find().toArray();
+        res.send(questions)
+        
+    }catch(error){
+        res.send(error.message)
+    }
+})
 
 
 
