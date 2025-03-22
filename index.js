@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require("express")
 const cors = require("cors")
 const app = express()
@@ -38,7 +38,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
 
-
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
 
     // Database & Collection name
     const db = client.db("homeTutorDB");
@@ -78,11 +79,28 @@ app.get('/tutors', async(req,res) => {
     }
 })
 
+// Get specific tutor by id
+app.get('/tutor/:id', async(req,res) => {
+    try {
+        const id = req.params.id; // Get ID from request params
+        const query = { _id: new ObjectId(id) }; // Convert to ObjectId
+
+        const tutor = await tutorCollection.findOne(query); // Await the result
+
+        if (!tutor) {
+            return res.status(404).json({ message: "Tutor not found" });
+        }
+
+        res.json(tutor);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching tutor", error });
+    }
+})
 
 
 
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+
+    
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
