@@ -38,8 +38,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
 
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    
 
     // Database & Collection name
     const db = client.db("homeTutorDB");
@@ -97,10 +96,47 @@ app.get('/tutor/:id', async(req,res) => {
     }
 })
 
+// Post Note Data
+app.post('/note', async(req,res) => {
+    const solution = req.body;
+    const result = await solutionCollection.insertOne(solution);
+    res.send(result)
+})
+
+
+// Get all solutions
+app.get('/solutions', async(req,res) => {
+    try{
+        const solutions = await solutionCollection.find().toArray();
+        res.send(solutions)
+
+    }catch(error){
+        res.send(error.message)
+    }
+})
+
+// Get specific solution by questionId
+app.get('/solution/:id', async(req,res) => {
+    try {
+        const questionId = req.params.id; // Get ID from request params
+        const query = { questionId : questionId }; 
+
+        const solution = await solutionCollection.findOne(query); // Await the result
+
+        if (!solution) {
+            return res.status(404).json({ message: "Solution not found" });
+        }
+
+        res.json(solution);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching solution", error });
+    }
+})
 
 
 
-    
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
