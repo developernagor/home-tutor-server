@@ -133,6 +133,44 @@ app.get('/solution/:id', async(req,res) => {
     }
 })
 
+// Post Course Data
+app.post('/course', async(req,res) => {
+    const course = req.body;
+    const result = await courseCollection.insertOne(course);
+    res.send(result)
+})
+
+
+// Get all courses
+app.get('/courses', async(req,res) => {
+    try{
+        const courses = await courseCollection.find().toArray();
+        res.send(courses)
+
+    }catch(error){
+        res.send(error.message)
+    }
+})
+
+// Get specific solution by questionId
+app.get('/courses/:id', async(req,res) => {
+    try {
+        const id = req.params.id; // Get ID from request params
+        const query = { _id : new ObjectId(id) }; 
+
+        const course = await courseCollection.findOne(query); // Await the result
+
+        if (!course) {
+            return res.status(404).json({ message: "Course not found" });
+        }
+
+        res.json(course);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching course", error });
+    }
+})
+
+
 
 
     // Connect the client to the server	(optional starting in v4.7)
