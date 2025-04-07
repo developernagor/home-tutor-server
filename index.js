@@ -48,6 +48,7 @@ async function run() {
     const questionCollection = db.collection("questions");
     const messageCollection = db.collection("messages");
     const solutionCollection = db.collection("solutions");
+    const subjectWiseSolutionCollection = db.collection("subjectWiseSolution");
 
 // Post single Question
     app.post('/question', async(req,res) => {
@@ -55,6 +56,31 @@ async function run() {
         const result = await questionCollection.insertOne(newQuestion);
         res.send(result)
     })
+
+    // Update Question
+// app.patch("/questions/:id", async (req, res) => {
+//     try {
+//       const id = req.params.id; // Get id from URL
+//       const updatedData = req.body; // Data you want to update
+  
+//       const filter = { _id: new ObjectId(id) };
+//       const updateDoc = {
+//         $set: updatedData,
+//       };
+  
+//       const result = await questionCollection.updateOne(filter, updateDoc);
+  
+//       if (result.matchedCount === 0) {
+//         return res.status(404).json({ message: "Question not found" });
+//       }
+  
+//       res.json({ message: "Question updated successfully", result });
+  
+//     } catch (error) {
+//       res.status(500).json({ message: "Error updating question", error });
+//     }
+//   });
+  
 
 // Get all question
 app.get('/questions', async(req,res) => {
@@ -66,6 +92,14 @@ app.get('/questions', async(req,res) => {
         res.send(error.message)
     }
 })
+
+// Post add Tutor
+app.post('/tutor', async(req,res) => {
+    const tutor = req.body;
+    const result = await tutorCollection.insertOne(tutor);
+    res.send(result)
+})
+
 
 // Get all tutors
 app.get('/tutors', async(req,res) => {
@@ -132,6 +166,14 @@ app.get('/solution/:id', async(req,res) => {
         res.status(500).json({ message: "Error fetching solution", error });
     }
 })
+
+// Post subject wise solution
+app.post('/subject-wise-solution', async(req,res) => {
+    const solution = req.body;
+    const result = await subjectWiseSolutionCollection.insertOne(solution);
+    res.send(result)
+})
+
 
 // Post Course Data
 app.post('/course', async(req,res) => {
