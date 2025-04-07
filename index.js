@@ -174,6 +174,34 @@ app.post('/subject-wise-solution', async(req,res) => {
     res.send(result)
 })
 
+// Get all subject wise solution
+app.get('/subject-wise-solution', async(req,res) => {
+    try{
+        const subjectWiseSolution = await subjectWiseSolutionCollection.find().toArray();
+        res.send(subjectWiseSolution)
+
+    }catch(error){
+        res.send(error.message)
+    }
+})
+
+// Get specific solution by solutionId
+app.get('/subject-wise-solution/:id', async(req,res) => {
+    try {
+        const solutionId = req.params.id; // Get ID from request params
+        const query = { solutionId : solutionId }; 
+
+        const result = await subjectWiseSolutionCollection.findOne(query); // Await the result
+
+        if (!result) {
+            return res.status(404).json({ message: "Solution not found" });
+        }
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching solution", error });
+    }
+})
 
 // Post Course Data
 app.post('/course', async(req,res) => {
