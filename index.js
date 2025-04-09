@@ -50,6 +50,17 @@ async function run() {
     const solutionCollection = db.collection("solutions");
     const subjectWiseSolutionCollection = db.collection("subjectWiseSolution");
 
+
+
+// User data
+    app.post('/users', async(req,res) => {
+        const newUser = req.body;
+        const result = await userCollection.insertOne(newUser);
+        res.send(result)
+    })
+
+
+
 // Post single Question
     app.post('/question', async(req,res) => {
         const newQuestion = req.body;
