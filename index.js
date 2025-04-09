@@ -52,12 +52,31 @@ async function run() {
 
 
 
-// User data
-    app.post('/users', async(req,res) => {
-        const newUser = req.body;
-        const result = await userCollection.insertOne(newUser);
-        res.send(result)
-    })
+// Save or update an user in db
+app.post('/users/:email', async(req,res)=>{
+    const email = req.params.email;
+  const query = {email}
+  const user = req.body;
+  const isExist =await userCollection.findOne(query)
+  if(isExist) {
+    return res.send(isExist)
+  }
+  const result = await userCollection.insertOne({
+    ...user,
+    role: 'student',
+    timestamp: Date.now()
+  })
+  res.send(result)
+  })
+
+
+//   Get user data
+app.get("/user/:email", async(req,res) => {
+    const email = req.params.email;
+    const query = {email: email}
+    const result = await userCollection.findOne(query);
+    res.send(result)
+})
 
 
 
