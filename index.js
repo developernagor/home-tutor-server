@@ -49,6 +49,7 @@ async function run() {
     const messageCollection = db.collection("messages");
     const solutionCollection = db.collection("solutions");
     const subjectWiseSolutionCollection = db.collection("subjectWiseSolution");
+    const blogCollection = db.collection("blogs")
 
 
 
@@ -71,6 +72,11 @@ app.post('/users/:email', async(req,res)=>{
 
 
 //   Get user data
+app.get("/users", async(req,res) => {
+    const result = await userCollection.find().toArray();
+    res.send(result)
+})
+//   Get user data by specific email
 app.get("/user/:email", async(req,res) => {
     const email = req.params.email;
     const query = {email: email}
@@ -268,6 +274,20 @@ app.get('/courses/:id', async(req,res) => {
     } catch (error) {
         res.status(500).json({ message: "Error fetching course", error });
     }
+})
+
+
+// Blog post api
+app.post('/blog', async(req,res) => {
+    const newBlog = req.body;
+    const result = await blogCollection.insertOne(newBlog);
+    res.send(result)
+})
+
+// Get Blog data
+app.get("/blog", async(req, res) => {
+    const result = await blogCollection.find().toArray()
+    res.send(result)
 })
 
 
