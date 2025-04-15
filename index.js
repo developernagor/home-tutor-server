@@ -129,6 +129,27 @@ app.get('/questions', async(req,res) => {
     }
 })
 
+// Delete a question by questionId
+app.delete('/questions/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      const query = { questionId: id }; // assuming you're storing questionId as a string
+  
+      const result = await questionCollection.deleteOne(query);
+  
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+  
+      res.json({ message: "Question deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting question", error });
+    }
+  });
+
+  
+  
+
 // Post add Tutor
 app.post('/tutor', async(req,res) => {
     const tutor = req.body;
