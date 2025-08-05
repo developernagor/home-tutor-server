@@ -315,6 +315,51 @@ app.get('/result', async (req, res) => {
     res.json(result);
 });
 
+//  Get ALL results for a specific student by studentId
+app.get('/results/student', async (req, res) => {
+  const { studentId } = req.query;
+
+  if (!studentId) {
+    return res.status(400).json({ message: "Missing studentId in query" });
+  }
+
+  try {
+    const results = await resultCollection.find({ studentId }).toArray();
+
+    if (!results.length) {
+      return res.status(404).json({ message: "No results found for this student" });
+    }
+
+    res.json(results);
+  } catch (error) {
+    console.error("Error fetching student results:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+// Update user by email
+app.patch('/user/email/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    const updatedData = req.body;
+
+    const filter = { email };
+    const updateDoc = { $set: updatedData };
+
+    const result = await userCollection.updateOne(filter, updateDoc);
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "User updated successfully", result });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating user", error });
+  }
+});
+
+
+
 
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
