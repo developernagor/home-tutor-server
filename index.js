@@ -4,6 +4,8 @@ const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 5000;
 require("dotenv").config();
+const nodemailer = require("nodemailer");
+
 
 // Middleware
 app.use(
@@ -42,6 +44,7 @@ async function run() {
     const subjectWiseSolutionCollection = db.collection("subjectWiseSolution");
     const blogCollection = db.collection("blogs");
     const resultCollection = db.collection("results");
+    const studentCollection = db.collection("students")
 
     // Save or update an user in db
     app.post("/user/:email", async (req, res) => {
@@ -95,6 +98,94 @@ async function run() {
       const result = await userCollection.findOne(query);
       res.send(result);
     });
+
+    app.post("/student", async (req, res) => {
+  const student = req.body;
+
+  if (!student.name || !student.email) {
+    return res.status(400).json({ message: "Name and email are required" });
+  }
+
+  try {
+    const result = await studentCollection.insertOne(student);
+    res.status(201).json({ message: "Student added successfully", result });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to add student", error });
+  }
+});
+
+
+app.get("/students", async (req, res) => {
+  try {
+    const students = await studentCollection.find().toArray();
+    res.json(students);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch students", error });
+  }
+});
+
+
+app.get("/students/emails", async (req, res) => {
+  try {
+    const emails = await studentCollection.find({}, { projection: { email: 1, _id: 0 } }).toArray();
+    const emailList = emails.map(e => e.email);
+    res.json(emailList);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch emails", error });
+  }
+});
+
+
+
+// Nodemailer setup
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// Helper function to send single email
+const sendEmail = async (to, subject, text) => {
+  const mailOptions = {
+    from: `"ক্ষুদে বিজ্ঞানী প্রাইভেট হাউস" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    text,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
+// Route to send email to all students
+app.post("/send-email-all", async (req, res) => {
+  const { subject, message } = req.body;
+
+  if (!subject || !message) {
+    return res.status(400).json({ message: "Subject and message are required" });
+  }
+
+  try {
+    const students = await studentCollection.find({}, { projection: { email: 1, name: 1 } }).toArray();
+
+    const results = [];
+    for (let student of students) {
+      try {
+        await sendEmail(student.email, subject, message);
+        results.push({ email: student.email, status: "sent" });
+      } catch (err) {
+        console.error("Failed for:", student.email, err.message);
+        results.push({ email: student.email, status: "failed", error: err.message });
+      }
+    }
+
+    res.status(200).json({ message: "Bulk email process completed", results });
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ message: "Server error sending emails", error: err.message });
+  }
+});
+
 
     // Post single Question
     app.post("/question", async (req, res) => {
@@ -357,6 +448,32 @@ app.patch('/user/email/:email', async (req, res) => {
     res.status(500).json({ message: "Error updating user", error });
   }
 });
+
+
+app.post("/send-email", async (req, res) => {
+  const { email, subject, message } = req.body;
+
+  if (!email || !subject || !message) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  const mailOptions = {
+    from: `"ক্ষুদে বিজ্ঞানী প্রাইভেট হাউস" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject,
+    text: message,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.json({ message: `Email sent to ${email}` });
+  } catch (error) {
+    console.error("Email sending failed:", error);
+    res.status(500).json({ error: "Failed to send email" });
+  }
+});
+
+
 
 
 
