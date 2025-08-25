@@ -45,6 +45,8 @@ async function run() {
     const blogCollection = db.collection("blogs");
     const resultCollection = db.collection("results");
     const studentCollection = db.collection("students")
+    const emailCollection = db.collection("emails");
+
 
     // Save or update an user in db
     app.post("/user/:email", async (req, res) => {
@@ -135,6 +137,23 @@ app.get("/students/emails", async (req, res) => {
   }
 });
 
+// ✅ Get all emails for a student
+app.get("/emails/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const emails = await emailCollection
+      .find({ studentId })
+      .sort({ date: -1 })
+      .toArray();
+
+    res.json(emails);
+  } catch (error) {
+    console.error("Error fetching emails:", error);
+    res.status(500).json({ message: "Failed to fetch emails" });
+  }
+});
+
+
 
 
 // Nodemailer setup
@@ -147,12 +166,12 @@ const transporter = nodemailer.createTransport({
 });
 
 // Helper function to send single email
-const sendEmail = async (to, subject, text) => {
+const sendEmail = async (to, subject, htmlContent) => {
   const mailOptions = {
     from: `"ক্ষুদে বিজ্ঞানী প্রাইভেট হাউস" <${process.env.EMAIL_USER}>`,
     to,
     subject,
-    text,
+    html: htmlContent,
   };
   return transporter.sendMail(mailOptions);
 };
@@ -166,26 +185,56 @@ app.post("/send-email-all", async (req, res) => {
   }
 
   try {
-    const students = await studentCollection.find({}, { projection: { email: 1, name: 1 } }).toArray();
+    const students = await studentCollection.find({}, { projection: { email: 1, name:1, studentId:1 } }).toArray();
 
-    const results = [];
-    for (let student of students) {
-      try {
-        await sendEmail(student.email, subject, message);
-        results.push({ email: student.email, status: "sent" });
-      } catch (err) {
-        console.error("Failed for:", student.email, err.message);
-        results.push({ email: student.email, status: "failed", error: err.message });
-      }
-    }
 
-    res.status(200).json({ message: "Bulk email process completed", results });
-  } catch (err) {
-    console.error("Server error:", err);
-    res.status(500).json({ message: "Server error sending emails", error: err.message });
+    // send email one by one
+    await Promise.all(
+      students.map(async(s) => {
+        const personalizedMsg = `
+          <h3>Hi ${s.name},</h3>
+          <p>${message}</p>
+          <br/>
+          <p>Best Regards,<br/>ক্ষুদে বিজ্ঞানী প্রাইভেট হাউস</p>
+        `;
+        await sendEmail(s.email, subject, personalizedMsg);
+
+        // save email to DB
+    await emailCollection.insertOne({
+      studentId: s.studentId,
+      studentName: s.name,
+      email: s.email,
+      subject,
+      body: message,
+      date: new Date(),
+    });
+
+      })
+    );
+
+    res.status(200).json({ message: "Emails sent to all students!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to send emails" });
   }
 });
 
+
+// ✅ Send email to a SINGLE student
+app.post("/send-email-single", async (req, res) => {
+  const { to, subject, message } = req.body;
+  if (!to || !subject || !message) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  try {
+    await sendEmail(to, subject, message);
+    res.status(200).json({ message: "Email sent successfully!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to send email" });
+  }
+});
 
     // Post single Question
     app.post("/question", async (req, res) => {
