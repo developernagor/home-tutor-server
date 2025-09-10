@@ -477,6 +477,48 @@ app.get('/results/student', async (req, res) => {
   }
 });
 
+// PUT guardian comment
+// PUT comment for a student result
+app.put("/result/:id/comment", async (req, res) => {
+  const { id } = req.params;
+  const { email, text } = req.body;
+
+  if (!email || !text) {
+    return res.status(400).json({ message: "Email and comment are required." });
+  }
+
+  try {
+    // 1. Find the result by ID
+    const result = await resultCollection.findOne({ _id: new ObjectId(id) });
+    if (!result) {
+      return res.status(404).json({ message: "Result not found." });
+    }
+
+    // 2. Prevent duplicate comment by this user
+    if (result.userComments?.some(c => c.email === email)) {
+      return res.status(400).json({ message: "You have already commented." });
+    }
+
+    // 3. Save the comment
+    await resultCollection.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $push: {
+          userComments: { email, text, date: new Date() }
+        }
+      }
+    );
+
+    res.json({ message: "Comment added successfully." });
+  } catch (error) {
+    console.error("Error saving comment:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+
+
+
 // Update user by email
 app.patch('/user/email/:email', async (req, res) => {
   try {
